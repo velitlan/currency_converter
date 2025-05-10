@@ -23,7 +23,7 @@ def convert_currency(amount, rate):
     return amount * rate
 
 def main():
-    print("🌍 Währungsrechner (Frankfurter API, EZB-Daten)")
+    print("Währungsrechner (Frankfurter API, EZB-Daten)")
     try:
         currencies = get_supported_currencies()
         print("\nVerfügbare Währungen:")

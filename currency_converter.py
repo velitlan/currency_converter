@@ -9,18 +9,20 @@ def get_supported_currencies():
         response.raise_for_status()
         return response.json()
     except requests.RequestException:
-        raise ValueError("Liste nicht abrufbar.")
+        raise ValueError("Liste der Währungen konnte nicht abgerufen werden.")
 
-def fetch_exchange_rate(base_currency, target_currency):
-    if base_currency == target_currency:
-        return 1.0
+def fetch_exchange_rates(base_currency, target_currencies):
+    if base_currency in target_currencies:
+        target_currencies.remove(base_currency)
+    if not target_currencies:
+        return {base_currency: 1.0}
     try:
-        response = session.get(f"{API_BASE}/latest", params={"from": base_currency, "to": target_currency})
+        response = session.get(f"{API_BASE}/latest", params={"from": base_currency, "to": ",".join(target_currencies)})
         response.raise_for_status()
         data = response.json()
-        return data["rates"].get(target_currency)
+        return data["rates"]
     except requests.RequestException:
-        raise ValueError("Fehler beim Abrufen des Wechselkurses.")
+        raise ValueError("Fehler beim Abrufen der Wechselkurse.")
 
 def convert_currency(amount, rate):
     return amount * rate
@@ -33,20 +35,20 @@ def main():
         print(", ".join(sorted(currencies)))
 
         base = input("\nAusgangswährung (z.B. EUR): ").upper()
-        target = input("Zielwährung (z.B. USD): ").upper()
+        targets_input = input("Zielwährung(en), kommasepariert (z.B. USD,JPY): ").upper()
+        target_currencies = [c.strip() for c in targets_input.split(",")]
 
-        if base not in currencies or target not in currencies:
-            print("Ungültige Währung. Bitte aus der Liste wählen.")
+        if base not in currencies or any(t not in currencies for t in target_currencies):
+            print("Ungültige Währung(en). Bitte aus der Liste wählen.")
             return
 
         amount = float(input(f"Betrag in {base}: "))
-        rate = fetch_exchange_rate(base, target)
-        if rate is None:
-            print("Wechselkurs nicht auffindbar.")
-            return
+        rates = fetch_exchange_rates(base, target_currencies)
 
-        result = convert_currency(amount, rate)
-        print(f"\n{amount:.2f} {base} = {result:.2f} {target} (Kurs: {rate:.4f})")
+        print("\nUmrechnung:")
+        for currency, rate in rates.items():
+            result = convert_currency(amount, rate)
+            print(f"{amount:.2f} {base} = {result:.2f} {currency} (Kurs: {rate:.4f})")
 
     except Exception as e:
         print("Fehler:", e)

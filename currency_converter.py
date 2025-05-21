@@ -1,4 +1,6 @@
 import requests
+import tkinter as tk
+from tkinter import ttk, messagebox
 
 API_BASE = "https://api.frankfurter.app"
 session = requests.Session()
@@ -27,31 +29,55 @@ def fetch_exchange_rates(base_currency, target_currencies):
 def convert_currency(amount, rate):
     return amount * rate
 
-def main():
-    print("Währungsrechner (Frankfurter API, EZB-Daten)")
+def perform_conversion():
     try:
-        currencies = get_supported_currencies()
-        print("\nVerfügbare Währungen:")
-        print(", ".join(sorted(currencies)))
+        base = base_currency_var.get()
+        targets = [target_currency_var.get()]
+        amount = float(amount_var.get())
 
-        base = input("\nAusgangswährung (z.B. EUR): ").upper()
-        targets_input = input("Zielwährung(en), kommasepariert (z.B. USD,JPY): ").upper()
-        target_currencies = [c.strip() for c in targets_input.split(",")]
+        if base not in currencies or any(t not in currencies for t in targets):
+            raise ValueError("Ungültige Währungen.")
 
-        if base not in currencies or any(t not in currencies for t in target_currencies):
-            print("Ungültige Währung(en). Bitte aus der Liste wählen.")
-            return
+        rates = fetch_exchange_rates(base, targets)
 
-        amount = float(input(f"Betrag in {base}: "))
-        rates = fetch_exchange_rates(base, target_currencies)
-
-        print("\nUmrechnung:")
+        result_text = ""
         for currency, rate in rates.items():
-            result = convert_currency(amount, rate)
-            print(f"{amount:.2f} {base} = {result:.2f} {currency} (Kurs: {rate:.4f})")
+            converted = convert_currency(amount, rate)
+            result_text += f"{amount:.2f} {base} = {converted:.2f} {currency} (Kurs: {rate:.4f})\n"
 
+        result_label.config(text=result_text.strip())
     except Exception as e:
-        print("Fehler:", e)
+        messagebox.showerror("Fehler", str(e))
 
-if __name__ == "__main__":
-    main()
+#GUI Setup
+root = tk.Tk()
+root.title("Währungsrechner (Frankfurter API)")
+
+try:
+    currencies = get_supported_currencies()
+    currency_list = sorted(currencies.keys())
+except Exception as e:
+    messagebox.showerror("Fehler", str(e))
+    root.destroy()
+    exit()
+
+#Elemente
+base_currency_var = tk.StringVar(value="EUR")
+target_currency_var = tk.StringVar(value="USD")
+amount_var = tk.StringVar(value="1.0")
+
+tk.Label(root, text="Ausgangswährung:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
+ttk.Combobox(root, textvariable=base_currency_var, values=currency_list).grid(row=0, column=1)
+
+tk.Label(root, text="Zielwährung:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
+ttk.Combobox(root, textvariable=target_currency_var, values=currency_list).grid(row=1, column=1)
+
+tk.Label(root, text="Betrag:").grid(row=2, column=0, padx=5, pady=5, sticky="e")
+tk.Entry(root, textvariable=amount_var).grid(row=2, column=1)
+
+tk.Button(root, text="Umrechnen", command=perform_conversion).grid(row=3, column=0, columnspan=2, pady=10)
+
+result_label = tk.Label(root, text="", justify="left", font=("Courier", 10))
+result_label.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
+
+root.mainloop()

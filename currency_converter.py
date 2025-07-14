@@ -32,14 +32,11 @@ def perform_conversion():
         base = base_currency_var.get()
         target = target_currency_var.get()
         amount = float(amount_var.get())
-
         if base not in currencies or target not in currencies:
             raise ValueError("Ungültige Währungsauswahl.")
-
         rates = fetch_exchange_rates(base, [target])
         rate = rates.get(target, 1.0)
         converted = convert_currency(amount, rate)
-
         result_label.config(text=f"{amount:.2f} {base} = {converted:.2f} {target} (Kurs: {rate:.4f})")
     except ValueError as ve:
         messagebox.showerror("Fehler", str(ve))
@@ -63,13 +60,13 @@ amount_var = tk.StringVar(value="1.0")
 
 entries = [
     ("Ausgangswährung:", ttk.Combobox(root, textvariable=base_currency_var, values=currency_list, state="readonly")),
-    ("Zielwährung:",     ttk.Combobox(root, textvariable=target_currency_var, values=currency_list, state="readonly")),
-    ("Betrag:",           tk.Entry(root, textvariable=amount_var)),
+    ("Zielwährung:", ttk.Combobox(root, textvariable=target_currency_var, values=currency_list, state="readonly")),
+    ("Betrag:", tk.Entry(root, textvariable=amount_var)),
 ]
 
-for idx, (label, widget) in enumerate(entries):
-    tk.Label(root, text=label).grid(row=idx, column=0, padx=5, pady=5, sticky="e")
-    widget.grid(row=idx, column=1, padx=5, pady=5)
+for i, (label_text, widget) in enumerate(entries):
+    tk.Label(root, text=label_text).grid(row=i, column=0, padx=5, pady=5, sticky="e")
+    widget.grid(row=i, column=1, padx=5, pady=5)
 
 tk.Button(root, text="Umrechnen", command=perform_conversion).grid(row=3, column=0, columnspan=2, pady=10)
 
@@ -77,12 +74,3 @@ result_label = tk.Label(root, text="", justify="left", font=("Courier", 10))
 result_label.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
 
 root.mainloop()
-
-
-
-
-
-
-
-
-
